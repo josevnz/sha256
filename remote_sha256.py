@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
+"""
+Connect to a remove server and calculate the SHA256 checksums for a given directory,
+saving the results locally.
+"""
 import argparse
 import traceback
 import sys
 import random
 import time
-from _socket import gaierror
 from pathlib import Path
+from _socket import gaierror
 import paramiko
 from paramiko import SSHException, SSHClient, AutoAddPolicy
 
-
+# pylint: disable=line-too-long
+# pylint: disable=unused-variable
 def remote_sha256(
         *,
         server: str,
@@ -17,6 +22,15 @@ def remote_sha256(
         remotepath: str,
         report: str
 ):
+    """
+    Connect to a remote server and calculate the SHA256 checksums. The script uses public authentication and expects
+    an RSA private/public key to be ready on both local and remote servers.
+    :param server: Remote server
+    :param retries: Number of retries
+    :param remotepath: Path where the files that need an SHA256 checksum calculated reside
+    :param report: Local path for the generated report
+    :return: None
+    """
     with SSHClient() as client:
         client.load_system_host_keys()
         client.set_missing_host_key_policy(AutoAddPolicy())
@@ -25,9 +39,9 @@ def remote_sha256(
         while attempt < retries:
             try:
                 client.connect(hostname=server, pkey=key, banner_timeout=300, timeout=300)
-                REMOTE_CMD = f'/usr/bin/find {remotepath} -type f| /usr/bin/xargs /usr/bin/sha256sum --binary'
+                remote_cmd = f'/usr/bin/find {remotepath} -type f| /usr/bin/xargs /usr/bin/sha256sum --binary'
                 print(f"SSH connected to {server}, getting remote checksums. It will take a while...")
-                stdin, stdout, stderr = client.exec_command(REMOTE_CMD)
+                stdin, stdout, stderr = client.exec_command(remote_cmd)
                 with open(report, 'w') as rfh:
                     for line in stdout.readlines():
                         rfh.write(line)
